@@ -17,7 +17,9 @@
 #2 run dataprep.py in that environment
 
 
-#3 run train.py in that environment
+#3 run models.py in that environment
+
+#4 run train.py in that environment
 
 
  
