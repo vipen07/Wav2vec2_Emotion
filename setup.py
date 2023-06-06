@@ -8,4 +8,5 @@ pip.main(['install','torchaudio'])
 pip.main(['install', 'librosa'])
 
 pip.main(['install','accelerate'])
-pip.main(['install','numpy=1.23.'])
+pip.main(['install','numpy=1.23.1'])
+pip.main(['install','transformers'])

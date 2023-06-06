@@ -77,7 +77,8 @@ speech = speech[0].numpy().squeeze()
 speech = librosa.resample(np.asarray(speech), orig_sr = sr, target_sr=16_000)
 ipd.Audio(data=np.asarray(speech), autoplay=True, rate=16000)
 
-save_path = "/Data/"
+save_path = "Wav2vec2_Emotion\Data"
+
 
 train_df, test_df = train_test_split(df, test_size=0.2, random_state=101, stratify=df["emotion"])
 
