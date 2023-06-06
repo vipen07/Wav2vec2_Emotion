@@ -21,5 +21,4 @@
 
 #4 run train.py in that environment
 
-
- 
+#5 run test.py in that environment
