@@ -15,8 +15,11 @@ data = []
 
 for path in tqdm(Path("Data/Acted Emotional Speech Dynamic Database").glob("**/*.wav")):
 
-    name = str(path).split('.')[0].split('/')[-1].split('-')[-1]
-    label = str(path).split('.')[0].split('/')[-2]
+    name = str(path).split('\\')[-1].split('.')[0]
+    label = str(path).split('.')[-2].split('\\')[-2]
+
+
+
 
     try:
         # There are some broken files
@@ -74,7 +77,7 @@ speech = speech[0].numpy().squeeze()
 speech = librosa.resample(np.asarray(speech), orig_sr = sr, target_sr=16_000)
 ipd.Audio(data=np.asarray(speech), autoplay=True, rate=16000)
 
-save_path = "/content/data"
+save_path = "/Data/"
 
 train_df, test_df = train_test_split(df, test_size=0.2, random_state=101, stratify=df["emotion"])
 
@@ -107,3 +110,58 @@ input_column = "path"
 output_column = "emotion"
 
 from transformers import AutoConfig, Wav2Vec2Processor
+
+model_name_or_path = "lighteternal/wav2vec2-large-xlsr-53-greek"
+pooling_mode = "mean"
+
+config = AutoConfig.from_pretrained(
+    model_name_or_path,
+    num_labels=num_labels,
+    label2id={label: i for i, label in enumerate(label_list)},
+    id2label={i: label for i, label in enumerate(label_list)},
+    finetuning_task="wav2vec2_clf",
+)
+setattr(config, 'pooling_mode', pooling_mode)
+
+
+processor = Wav2Vec2Processor.from_pretrained(model_name_or_path,)
+target_sampling_rate = processor.feature_extractor.sampling_rate
+print(f"The target sampling rate: {target_sampling_rate}")
+
+
+def speech_file_to_array_fn(path):
+    speech_array, sampling_rate = torchaudio.load(path)
+    resampler = torchaudio.transforms.Resample(sampling_rate, target_sampling_rate)
+    speech = resampler(speech_array).squeeze().numpy()
+    return speech
+
+
+def label_to_id(label, label_list):
+    if len(label_list) > 0:
+        return label_list.index(label) if label in label_list else -1
+
+    return label
+
+
+def preprocess_function(examples):
+    speech_list = [speech_file_to_array_fn(path) for path in examples[input_column]]
+    target_list = [label_to_id(label, label_list) for label in examples[output_column]]
+
+    result = processor(speech_list, sampling_rate=target_sampling_rate)
+    result["labels"] = list(target_list)
+
+    return result
+
+
+train_dataset = train_dataset.map(
+    preprocess_function,
+    batch_size=100,
+    batched=True,
+    num_proc=4
+)
+eval_dataset = eval_dataset.map(
+    preprocess_function,
+    batch_size=100,
+    batched=True,
+    num_proc=4
+)
